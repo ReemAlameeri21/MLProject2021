@@ -5,6 +5,8 @@ from skimage.io import imread
 import torch
 from torchvision.datasets import ImageFolder
 import matplotlib.pyplot as plt
+import torchvision.transforms as transforms
+from sklearn.model_selection import train_test_split
 
 class CXRDataSet(Dataset):
 
@@ -51,13 +53,15 @@ class CXRDataSet(Dataset):
 
 class Data:
 
-    def __init__(self, data):
-        path_to_rgbdata = 'COVID_RGB'
-        data = ImageFolder(path_to_rgbdata)
+    def __init__(self, data, mean, std, dataset):
         self.data = data
+        self.mean = mean
+        self.std = std
+        self.dataset = dataset
 
     def loadPaths(self):
-        data = self.data
+        path_to_rgbdata = 'COVID_RGB'
+        self.data = ImageFolder(path_to_rgbdata)
 
         #  data variable attributes?
         #print(data)
@@ -85,8 +89,91 @@ class Data:
         plt.title("Class")
         plt.show()
 
-    def splitData(self):
+    def handleData(self):
         data = self.data
         # Split dataset into train test sets:
         trainData, testData, trainLabel, testLabel = train_test_split(data.imgs, data.targets, test_size=0.1, random_state=0, stratify=data.targets)
+        # Evaluate mean and std of images:
+        # mean and std are dependent on image size.
+        Data_transforms = transforms.Compose([transforms.Resize((224, 224)),
+                                              transforms.ToTensor()])
+
+        CXR_dataset = CXRDataSet(trainData, 'RGB',
+                                 transform=Data_transforms)
+
+        CXR_loader = torch.utils.data.DataLoader(CXR_dataset,
+                                                 batch_size=32, num_workers=4, shuffle=False)
+
+        mean, std = self.get_mean_and_std(CXR_loader)
+
+        self.mean = mean
+        self.std = std
+
+        Data_transforms = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(torch.Tensor(mean), torch.Tensor(std))
+        ])
+        # Important note: if we are going to use transforms.Resize
+        # The image must be read using PIL.Image.open, otherwise it won't work
+
+        train_set = CXRDataSet(trainData, 'RGB',
+                               transform=Data_transforms)
+        self.dataset = train_set
+
+        test_set = CXRDataSet(testData, 'RGB',
+                              transform=Data_transforms)
+
+        print("Size of train dataset: ", len(train_set))
+        print("Size of test dataset: ", len(test_set))
+
+        # train_set, test_set = torch.utils.data.random_split(CXR_dataset, [12123,3030])
+        # Our dataset contains 15153 images
+
+    def get_mean_and_std(loader):
+        mean = 0.
+        std = 0.
+        Total_images_count = 0.
+        for images, _ in loader:
+            Total_images_count += images.size(0)
+            # or you can use images.shape[0]
+            # print(images.shape) B xC X H X W
+            images = images.view(images.size(0), images.size(1), -1)
+            # print(images.shape) B x C x (H*W)
+            mean += images.mean(2).sum(0)
+            # find the mean of each channel
+            # in all images of the batch, axis=2
+            # sum the means of corresponding
+            # channels of the batch images, axis=0
+            std += images.std(2).sum(0)
+
+        mean /= Total_images_count
+        std /= Total_images_count
+
+        return mean, std
+
+    def show_transformed_images(self):
+        dataset = self.dataset
+        data = self.data
+
+        loader = torch.utils.data.DataLoader(dataset, batch_size=6, shuffle=True)
+        batch = next(iter(loader))
+        images, labels = batch
+        # print(images.shape) # BxCxWxH
+        images = images.numpy().transpose((0, 2, 3, 1))
+        # convert the images from torch to numpy and transpose
+        # print(images.shape)# BxWxHxC
+        mean_arr = np.array(self.mean)
+        std_arr = np.array(self.std)
+        images = std_arr * images + mean_arr
+        # When we normalize our data, it gets shifted, such that
+        # its mean becomes 0 and std. dev. of 1 i.e. the data will have negative portion.
+        images = np.clip(images, 0, 1)
+        fig, axes = plt.subplots(2, 3, figsize=(7, 5),
+                                 subplot_kw={'xticks': [], 'yticks': []},
+                                 gridspec_kw=dict(hspace=0.1, wspace=0.05))
+        for i, ax in enumerate(axes.flat):
+            ax.imshow(images[i], cmap='gray')
+            ax.set_xlabel('label: {}'.format(data.classes[labels[i]]))
+
 
