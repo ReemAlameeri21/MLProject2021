@@ -4,6 +4,7 @@ from skimage import io
 from skimage.io import imread
 import torch
 from torchvision.datasets import ImageFolder
+import matplotlib.pyplot as plt
 
 class CXRDataSet(Dataset):
 
@@ -49,9 +50,14 @@ class CXRDataSet(Dataset):
         return len(self.dataset)
 
 class Data:
-    def loadPaths():
-        path_to_rgbdata='COVID_RGB'
-        data= ImageFolder(path_to_rgbdata)
+
+    def __init__(self, data):
+        path_to_rgbdata = 'COVID_RGB'
+        data = ImageFolder(path_to_rgbdata)
+        self.data = data
+
+    def loadPaths(self):
+        data = self.data
 
         #  data variable attributes?
         #print(data)
@@ -66,3 +72,21 @@ class Data:
 
         print("Dataset classes:", data.classes)
         # the name of the classes [Normal , covid, ..]
+
+    def classHistograms(self):
+        data = self.data
+        # Show imbalance in dataset
+        counter = [data.targets.count(l) for l in set(data.targets)]
+        labels = data.classes
+        print(counter, labels)  # print perecentages
+        plt.bar(labels, counter, width=0.2)
+        plt.xlabel("Number of images per class")
+        plt.ylabel("No. of images ")
+        plt.title("Class")
+        plt.show()
+
+    def splitData(self):
+        data = self.data
+        # Split dataset into train test sets:
+        trainData, testData, trainLabel, testLabel = train_test_split(data.imgs, data.targets, test_size=0.1, random_state=0, stratify=data.targets)
+
