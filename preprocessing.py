@@ -10,7 +10,7 @@ from skimage.io import imread
 
 class Preprocessing:
 
-    def DoPreProcessing()
+    def doPreProcessing()
         df= pd.read_csv('train.csv')
         df.columns=["ID", "Labels"]
 
@@ -38,6 +38,18 @@ class Preprocessing:
                          final_image.save('/home/shahad.hardan/Downloads/ML Pro Dataset/Indeterminate/'+i+'.png')
                      elif int(df.loc[df['ID']==i+'_study']['Labels'])==3:
                          final_image.save('/home/shahad.hardan/Downloads/ML Pro Dataset/Typical Appearance/'+i+'.png')
+
+        # Resize image Atypical Appearance
+        for i in os.listdir('/home/shahad.hardan/Downloads/ML Pro Dataset/Atypical Appearance/'):
+            im = Image.open('/home/shahad.hardan/Downloads/ML Pro Dataset/Atypical Appearance/' + '/' + i)
+            new_im = im.resize((224, 224))
+            new_im.save('/home/shahad.hardan/Downloads/COVID_resized 224/Atypical Appearance/' + i)
+
+        # Resize image Indeterminate
+        for i in os.listdir('/home/shahad.hardan/Downloads/ML Pro Dataset/Indeterminate/'):
+            im = Image.open('/home/shahad.hardan/Downloads/ML Pro Dataset/Indeterminate/'+i)
+            new_im= im.resize((224,224))
+            new_im.save('/home/shahad.hardan/Downloads/COVID_resized 224/Indeterminate/'+i)
 
         #Resize image Negative
         for i in os.listdir('/home/shahad.hardan/Downloads/ML Pro Dataset/Negative/'):
