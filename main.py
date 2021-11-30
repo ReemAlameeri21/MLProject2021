@@ -1,5 +1,6 @@
 from preprocessing import Preprocessing
 from data import Data
+from torch.utils.data import DataLoader
 
 preprocess = Preprocessing
 preprocess.doPreProcessing()

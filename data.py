@@ -53,11 +53,12 @@ class CXRDataSet(Dataset):
 
 class Data:
 
-    def __init__(self, data, mean, std, dataset):
+    def __init__(self, data, mean, std, trainDataset, testDataset):
         self.data = data
         self.mean = mean
         self.std = std
-        self.dataset = dataset
+        self.trainDataset = trainDataset
+        self.testDataset = testDataset
 
     def loadPaths(self):
         path_to_rgbdata = 'COVID_RGB'
@@ -119,10 +120,12 @@ class Data:
 
         train_set = CXRDataSet(trainData, 'RGB',
                                transform=Data_transforms)
-        self.dataset = train_set
+        self.trainDataset = train_set
 
         test_set = CXRDataSet(testData, 'RGB',
                               transform=Data_transforms)
+
+        self.testDataset = test_set
 
         print("Size of train dataset: ", len(train_set))
         print("Size of test dataset: ", len(test_set))
@@ -153,7 +156,7 @@ class Data:
         return mean, std
 
     def show_transformed_images(self):
-        dataset = self.dataset
+        dataset = self.trainDataset
         data = self.data
 
         loader = torch.utils.data.DataLoader(dataset, batch_size=6, shuffle=True)
