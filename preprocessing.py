@@ -10,7 +10,8 @@ from skimage.io import imread
 
 class Preprocessing:
 
-    def doPreProcessing()
+    @staticmethod
+    def doPreProcessing():
         df= pd.read_csv('train.csv')
         df.columns=["ID", "Labels"]
 
