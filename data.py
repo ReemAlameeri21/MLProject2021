@@ -53,6 +53,13 @@ class CXRDataSet(Dataset):
 
 class Data:
 
+    data = None
+    mean = None
+    std = None
+    trainDataset = None
+    trainDataset = None
+    testDataset = None
+
     def __init__(self, data, mean, std, trainDataset, testDataset):
         self.data = data
         self.mean = mean
@@ -63,7 +70,7 @@ class Data:
     def loadPaths(self):
         path_to_rgbdata = 'COVID_RGB'
         self.data = ImageFolder(path_to_rgbdata)
-
+        data = self.data
         #  data variable attributes?
         #print(data)
         print('Total number of datapoints:', len(data.imgs))
