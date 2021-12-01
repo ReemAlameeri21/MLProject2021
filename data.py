@@ -191,3 +191,43 @@ class Data:
 
 
 class CheXpert:
+    data = None
+    trainData = None
+    testData = None
+    trainDataset = None
+    testDataset = None
+
+    def loadData(self):
+        self.data = ImageFolder('COVID_resized224')
+        data = self.data
+
+        print('Total number of datapoints:', len(data.imgs))
+
+        print('---------------------------')
+
+        print("Dataset classes:", data.classes)
+
+    def HandleData(self):
+        trainData, testData, trainLabel, testLabel = train_test_split(data.imgs, data.targets,
+                                                                      test_size=0.1,
+                                                                      random_state=0, stratify=data.targets)
+        self.trainData = trainData
+        self.testData = testData
+
+        Data_transforms = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(torch.Tensor([mean[0]]), torch.Tensor([std[0]]))
+        ])
+        # Important note: if we are going to use transforms.Resize
+        # The image must be read using PIL.Image.open, otherwise it won't work
+
+        train_set = CXRDataSet(trainData, 'L',
+                               transform=Data_transforms)
+        self.trainDataset = train_set
+        test_set = CXRDataSet(testData, 'L',
+                              transform=Data_transforms)
+        self.testDataset = test_set
+
+        len(train_set)
+        len(test_set)

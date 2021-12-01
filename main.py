@@ -3,6 +3,7 @@ from data import Data
 from train import Train
 from analysis import Analysis
 import matplotlib.pyplot as plt
+from data import CheXpert
 
 from torch.utils.data import DataLoader
 import torch
@@ -201,5 +202,17 @@ plt.ylabel('Loss')
 plt.legend(loc='best')
 
 
+myCheXpert = CheXpert
+
+batch_size = 32
+
+train_loader= DataLoader(dataset= myCheXpert.trainDataset,
+                         batch_size= batch_size,
+                         shuffle =True,
+                         num_workers = 8)
+test_loader= DataLoader(dataset= myCheXpert.testDataset,
+                        batch_size= batch_size,
+                        shuffle =False,
+                        num_workers = 8)
 
 
