@@ -3,7 +3,8 @@ from data import Data
 from train import Train
 from analysis import Analysis
 import matplotlib.pyplot as plt
-from data import CheXpert
+from trainChex import TrainChex
+from loadChex import LoadChex
 
 from torch.utils.data import DataLoader
 import torch
@@ -56,8 +57,7 @@ def calculate_cls_weight(trainData):
     return class_weights
 
 
-seed = 1997
-torch.cuda.manual_seed_all(seed)
+#ImageNet, resnet
 
 d_net=models.densenet121(pretrained=False)
 #d_net.classifier.in_features
@@ -168,6 +168,8 @@ plt.ylabel('Loss')
 plt.legend(loc='best')
 
 
+#ImageNet, densenet
+
 d_net=models.densenet121(pretrained=True)
 num_ftrs_d=d_net.classifier.in_features
 num_classes= 4
@@ -202,17 +204,159 @@ plt.ylabel('Loss')
 plt.legend(loc='best')
 
 
-myCheXpert = CheXpert
 
-batch_size = 32
 
-train_loader= DataLoader(dataset= myCheXpert.trainDataset,
-                         batch_size= batch_size,
-                         shuffle =True,
-                         num_workers = 8)
-test_loader= DataLoader(dataset= myCheXpert.testDataset,
-                        batch_size= batch_size,
-                        shuffle =False,
-                        num_workers = 8)
+#chexpert, resnet
 
+
+
+res_chxtrans= models.resnet18(pretrained=False)
+res_chxtrans.inplanes=64
+res_chxtrans.conv1=nn.Conv2d(1,res_chxtrans.inplanes,kernel_size=7,stride=2,padding=3,bias=False)
+input_ftrs= res_chxtrans.fc.in_features
+num_classes= 14
+res_chxtrans.fc= nn.Linear(input_ftrs, num_classes)
+
+# transfer the model to gpu
+res_chxtrans= res_chxtrans.to (device)
+
+# #instantiate crossentropy loss object
+
+
+loss_func_train= nn.CrossEntropyLoss()
+
+
+optimizer = optim.SGD(res_chxtrans.parameters(), lr=0.01, momentum=0.9)
+
+
+modelname='resnet18'
+epochs= 100
+
+myTrainCheX = TrainChex
+myloadChex = LoadChex
+pre_model= myTrainCheX.trainchxpert_nn(res_chxtrans, myloadChex.trainDataLoader,myloadChex.validDataLoader,loss_func_train, optimizer,epochs, modelname, device)
+
+modelname='resnet18'
+checkpoint= torch.load(f'{modelname}_model_pretrainedchxpert_checkpoint.pth.tar')
+
+# Define the model:
+res_chxtrans= models.resnet18()
+
+# Change the model's structure:
+# Change the model's features to make it compatible with grayscale images
+res_chxtrans.inplanes=64
+res_chxtrans.conv1=nn.Conv2d(1,res_chxtrans.inplanes,kernel_size=7,stride=2,padding=3,bias=False)
+# Fully connected layer input features:
+input_ftrs= res_chxtrans.fc.in_features
+# number of output classes
+num_classes= 14
+#replace the fully connected layer to make it comaptible with our datset
+res_chxtrans.fc= nn.Linear(input_ftrs, num_classes)
+
+
+# Update the model's weights:
+res_chxtrans.load_state_dict(checkpoint['model'])
+
+# Save the model:
+torch.save(res_chxtrans, (f'best_{modelname}_model_pretrainedchxpert.pth'))
+
+
+pre_model= torch.load('/home/shahad.hardan/Downloads/ML701Prj/best_resnet18_model_pretrainedchxpert.pth')
+input_ftrs= pre_model.fc.in_features
+# number of output classes
+num_classes= 4
+#replace the fully connected layer to make it comaptible with our datset
+pre_model.fc= nn.Linear(input_ftrs, num_classes)
+
+
+
+#fine-tuning with our dataset
+
+# transfer the model to gpu
+pre_model= pre_model.to (device)
+
+# instantiate crossentropy loss object
+loss_func_test= nn.CrossEntropyLoss()
+
+loss_func_train= nn.CrossEntropyLoss(weight= calculate_cls_weight(myData.trainData))
+
+
+optimizer = optim.AdamW(d_net.parameters(), lr=0.01)
+
+modelname='resnet18_downstream_chexpert'
+epochs= 25
+model,test_labels, pred_cls, pred_proba, train_loss, test_loss= myTrain.train_nn(pre_model,
+                                                                        train_loader,test_loader,
+                                                                        loss_func_train,loss_func_test, optimizer,epochs, modelname, device)
+
+myAnalysis.conf_mtrx (test_labels,pred_cls)
+myAnalysis.evaluate_metrics (test_labels,pred_cls, myData.data)
+myAnalysis.ROC_plot_AUC_score (test_labels,pred_proba,len(myData.data.classes), myData.data)
+
+
+#chexpert, densenet
+
+dens_chxtrans= models.densenet121(pretrained=False)
+num_init_features=64
+dens_chxtrans.features.conv0=nn.Conv2d(1, num_init_features, kernel_size=7, stride=2,
+                                padding=3, bias=False)
+
+num_ftrs=dens_chxtrans.classifier.in_features
+num_classes= 14
+dens_chxtrans.classifier= nn.Linear(num_ftrs, num_classes)
+
+dens_chxtrans= dens_chxtrans.to(device)
+
+loss_func_train= nn.CrossEntropyLoss()
+
+optimizer = optim.SGD(dens_chxtrans.parameters(), lr=0.01, momentum=0.9)
+
+modelname='densenet121'
+
+epochs= 100
+pre_model=myTrainCheX.trainchxpert_nn(dens_chxtrans,myloadChex.trainDataLoader,myloadChex.validDataLoader,loss_func_train, optimizer,epochs, modelname, device)
+
+modelname='densenet121'
+checkpoint= torch.load(f'{modelname}_model_pretrainedchxpert_checkpoint.pth.tar')
+
+dens_chxtrans= models.densenet121()
+
+num_init_features=64
+dens_chxtrans.features.conv0=nn.Conv2d(1, num_init_features, kernel_size=7, stride=2,
+                                padding=3, bias=False)
+num_ftrs=dens_chxtrans.classifier.in_features
+num_classes= 14
+dens_chxtrans.classifier= nn.Linear(num_ftrs, num_classes)
+
+
+
+# Update the model's weights:
+dens_chxtrans.load_state_dict(checkpoint['model'])
+
+# Save the model:
+torch.save(dens_chxtrans, (f'best_{modelname}_model_pretrainedchxpert.pth'))
+
+model = torch.load('/home/shahad.hardan/Downloads/ML701Prj/best_densenet121_model_pretrainedchxpert.pth')
+num_ftrs=model.classifier.in_features
+num_classes= 4
+# model.op_threshs = None # prevent pre-trained model calibration
+model.classifier= nn.Linear(num_ftrs, num_classes)
+model= model.to(device)
+
+
+loss_func_train= nn.CrossEntropyLoss(weight= calculate_cls_weight(myData.trainData))
+loss_func_test= nn.CrossEntropyLoss()
+
+optimizer = optim.AdamW(d_net.parameters(), lr=0.01)
+
+epochs= 25
+modelname='densenet121-downstream_chexpert'
+model,test_labels, pred_cls, pred_proba, train_loss, test_loss=myTrain.train_nn(model,
+         train_loader,test_loader,
+         loss_func_train, loss_func_test, optimizer,epochs, modelname, device)
+
+
+myAnalysis.conf_mtrx (test_labels,pred_cls)
+myAnalysis.evaluate_metrics (test_labels,pred_cls, myData.data)
+myAnalysis.ROC_plot_AUC_score (test_labels,pred_proba,len(myData.data.classes), myData.data)
 

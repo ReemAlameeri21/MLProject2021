@@ -4,8 +4,10 @@ from torch.utils.data import DataLoader
 
 class LoadChex:
 
-    @staticmethod
-    def loadingChex():
+    trainDataLoader = None
+    validDataLoader = None
+
+    def loadingChex(self):
         batch_size = 32
         transform = torchvision.transforms.Compose([xrv.datasets.XRayCenterCrop(),
                                                     xrv.datasets.XRayResizer(224)])
@@ -23,8 +25,10 @@ class LoadChex:
                                       batch_size=batch_size,
                                       shuffle=True,
                                       num_workers=8)
-
+        self.trainDataLoader = train_dataloader
         valid_dataloader = DataLoader(dataset=d_chex_valid,
                                       batch_size=batch_size,
                                       shuffle=True,
                                       num_workers=8)
+
+        self.validDataLoader = valid_dataloader
