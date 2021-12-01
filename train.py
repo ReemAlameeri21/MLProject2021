@@ -1,4 +1,5 @@
 import torch
+from test import Test
 
 class Train:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -44,7 +45,8 @@ class Train:
             train_loss.append(epoch_loss)
             print(f'Train: {epoch_acc}% of the images classified correctly. Epoch loss= {epoch_loss}')
 
-            test_labels, pred_cls, pred_proba, t_loss, epoch_val_acc = test_model(model, test_loader, loss_func_test)
+            testObj = Test
+            test_labels, pred_cls, pred_proba, t_loss, epoch_val_acc = testObj.test_model(model, test_loader, loss_func_test, device)
 
             test_loss.append(t_loss)
 

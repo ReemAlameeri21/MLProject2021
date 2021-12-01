@@ -2,6 +2,8 @@ from preprocessing import Preprocessing
 from data import Data
 from torch.utils.data import DataLoader
 import torch
+from sklearn.utils import class_weight
+import numpy as np
 
 preprocess = Preprocessing
 preprocess.doPreProcessing()
@@ -30,3 +32,15 @@ myData.show_transformed_images()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.cuda.is_available()
 
+
+def calculate_cls_weight(trainData):
+    labels = []
+
+    for _, label in trainData:
+        labels.append(label)
+
+    class_weights = class_weight.compute_class_weight('balanced', classes=np.unique(labels), y=np.array(labels))
+    class_weights = torch.tensor(class_weights, dtype=torch.float, device=device)
+
+    print('class weights:', class_weights)
+    return class_weights
