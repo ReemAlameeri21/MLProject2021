@@ -1,6 +1,7 @@
 from preprocessing import Preprocessing
 from data import Data
 from torch.utils.data import DataLoader
+import torch
 
 preprocess = Preprocessing
 preprocess.doPreProcessing()
@@ -22,6 +23,10 @@ test_loader= DataLoader(dataset= myData.testDataset,
                         shuffle =False,
                         num_workers = 8)
 
-
+#Show transformed images
 myData.show_transformed_images()
+
+#Set Device
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+torch.cuda.is_available()
 
