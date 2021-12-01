@@ -2,8 +2,6 @@ import torch
 from test import Test
 
 class Train:
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     def train_nn(model, train_loader, test_loader, loss_func_train, loss_func_test, optimizer, epochs, modelname, device):
         best_val_acc = 0
         train_loss = []

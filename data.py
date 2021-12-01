@@ -57,8 +57,9 @@ class Data:
     mean = None
     std = None
     trainDataset = None
-    trainDataset = None
     testDataset = None
+    trainData = None
+    testData = None
 
     def __init__(self, data, mean, std, trainDataset, testDataset):
         self.data = data
@@ -101,6 +102,8 @@ class Data:
         data = self.data
         # Split dataset into train test sets:
         trainData, testData, trainLabel, testLabel = train_test_split(data.imgs, data.targets, test_size=0.1, random_state=0, stratify=data.targets)
+        self.trainData = trainData
+        self.testData = testData
         # Evaluate mean and std of images:
         # mean and std are dependent on image size.
         Data_transforms = transforms.Compose([transforms.Resize((224, 224)),
@@ -187,3 +190,4 @@ class Data:
             ax.set_xlabel('label: {}'.format(data.classes[labels[i]]))
 
 
+class CheXpert:
